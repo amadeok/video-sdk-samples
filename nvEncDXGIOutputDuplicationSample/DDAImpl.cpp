@@ -29,10 +29,22 @@
 #include "Defs.h"
 #include "DDAImpl.h"
 #include <iomanip>
+#include <DirectXTex.h>
+//#include <ScreenGrab.h>
 
+//#include <DDSTextureLoader.h>
+//#include <WICTextureLoader.h>
+
+//#include <DirectXTK/DDSTextureLoader.h>
+std::chrono::system_clock::time_point now() { return std::chrono::system_clock::now(); }
+void printt(std::chrono::system_clock::time_point& start, std::chrono::system_clock::time_point& end) {
+    auto tc_ = (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000.;
+    printf("cost %2.4lf ms\n", tc_);
+}
 /// Initialize DDA
 HRESULT DDAImpl::Init()
 {
+
     IDXGIOutput * pOutput = nullptr;
     IDXGIDevice2* pDevice = nullptr;
     IDXGIFactory1* pFactory = nullptr;
@@ -82,13 +94,92 @@ HRESULT DDAImpl::Init()
 
     height = outDesc.ModeDesc.Height;
     width = outDesc.ModeDesc.Width;
+
+
+
+
+    ////n = 12;
+
+    //int startX = 0, endX = 3800, startY = 0, endY = 2160;
+
+    sourceRegion.left = startX;
+    sourceRegion.right = endX;
+    sourceRegion.top = startY;
+    sourceRegion.bottom = endY;
+    sourceRegion.front = 0;
+    sourceRegion.back = 1;  // Assuming a 2D texture
+
+    // Calculate cropped texture width and height
+    croppedWidth = endX - startX;
+    croppedHeight = endY - startY;
+
+    // Create a new texture for the cropped region
+    D3D11_TEXTURE2D_DESC texDesc;
+
+    ZeroMemory(&texDesc, sizeof(texDesc));
+    texDesc.Width = croppedWidth + n;;
+    texDesc.Height = croppedHeight;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.Usage = D3D11_USAGE_DEFAULT;
+    texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE; // Can be used as a shader resource
+    texDesc.CPUAccessFlags = 0;
+    texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Assuming RGBA format
+
+    hr = pD3DDev->CreateTexture2D(&texDesc, nullptr, &croppedTexture);
+
+    // Copy the cropped region from the source texture to the destination texture
+
+
+    texDesc.Width = croppedWidth + n;
+    texDesc.Height = croppedHeight;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.SampleDesc.Quality = 0;
+    texDesc.Usage = D3D11_USAGE_STAGING;
+    texDesc.BindFlags = 0;
+    texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    hr = pD3DDev->CreateTexture2D(&texDesc, nullptr, &croppedTextureOut);
+
+
+
+
+
+    texDesc.Width = 3840;
+    texDesc.Height = 2160;
+    texDesc.MipLevels = 1;
+    texDesc.ArraySize = 1;
+    texDesc.SampleDesc.Count = 1;
+    texDesc.SampleDesc.Quality = 0;
+    texDesc.Usage = D3D11_USAGE_STAGING;
+    texDesc.BindFlags = 0;
+    texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+    texDesc.MiscFlags = 0;
+
+
+    pD3DDev->CreateTexture2D(&texDesc, 0, &undistortedShaderTex);
     CLEAN_RETURN(hr);
 }
+#include <wincodec.h>
+
+#include <guiddef.h>
+#include <opencv2/opencv.hpp>
+int n = 0;
+D3D11_MAPPED_SUBRESOURCE mappedResourceC;
+D3D11_MAPPED_SUBRESOURCE mappedResource;
 
 /// Acquire a new frame from DDA, and return it as a Texture2D object.
 /// 'wait' specifies the time in milliseconds that DDA shoulo wait for a new screen update.
 HRESULT DDAImpl::GetCapturedFrame(ID3D11Texture2D **ppTex2D, int wait)
 {
+
+    auto s = now();
+
     HRESULT hr = S_OK;
     DXGI_OUTDUPL_FRAME_INFO frameInfo;
     ZeroMemory(&frameInfo, sizeof(frameInfo));
@@ -96,6 +187,7 @@ HRESULT DDAImpl::GetCapturedFrame(ID3D11Texture2D **ppTex2D, int wait)
     
 
 #define RETURN_ERR(x) {printf(__FUNCTION__": %d : Line %d return 0x%x\n", frameno, __LINE__, x);return x;}
+
 
     if (pResource)
     {
@@ -146,7 +238,69 @@ HRESULT DDAImpl::GetCapturedFrame(ID3D11Texture2D **ppTex2D, int wait)
     ofs << "frameNo: " << frameno << " | Accumulated: "<< frameInfo.AccumulatedFrames <<" | PTS: " << frameInfo.LastPresentTime.QuadPart << " | PTSInterval: "<< (interval)*1000<<endl;
     lastPTS = pts; // store microsec value
     frameno += frameInfo.AccumulatedFrames;
+
+
+    ID3D11Texture2D* texture = *ppTex2D;
+
+    //D3D11_TEXTURE2D_DESC texDesc;
+
+    bool bcrop = false;
+    cv::Mat mat, crop;
+    if (bcrop) {
+    pCtx->CopySubresourceRegion(croppedTexture, 0, 0, 0, 0, texture, 0, &sourceRegion);
+
+    pCtx->CopySubresourceRegion(croppedTextureOut, 0, 0, 0, 0, croppedTexture, 0, nullptr);
+
+
+    if (hr = pCtx->Map(croppedTextureOut, 0, D3D11_MAP_READ, 0, &mappedResourceC))
+        std::cout << "Error: [CAM 2] could not Map Rendered Camera ShaderResource for Undistortion" << std::endl;
+
+
+    mat = cv::Mat(croppedHeight, croppedWidth + n, CV_8UC4, mappedResourceC.pData);
+    }
+    else {
+        //n++;
+        //printf("n %4d %4d \n", n, croppedWidth+n);
+
+        D3D11_TEXTURE2D_DESC texDesc;
+
+
+        //pCtx->CopyResource(undistortedShaderTex, pResource);
+        pCtx->CopySubresourceRegion(undistortedShaderTex, 0, 0, 0, 0, texture, 0, nullptr);
+
+        if (FAILED(pCtx->Map(undistortedShaderTex, 0, D3D11_MAP_READ, 0, &mappedResource)))
+            std::cout << "Error: [CAM 2] could not Map Rendered Camera ShaderResource for Undistortion" << std::endl;
+        mat  = cv::Mat(height, width, CV_8UC4, mappedResource.pData);
+        cv::Rect myROI(1900, 1000, 1920, 1000);
+
+        crop = mat(myROI);
+    }
+    // Copy Memory of GPU Memory Layout (swizzled) to CPU
+    //char* buffer = new char[(screenWidth_ * screenHeight_ * 4)];
+    //char* mappedData = static_cast<char*>(mappedResource.pData);
+    ////std::cout << "FINISHED LOOP .. " << std::endl;
+    //memcpy(buffer, mappedData, (screenWidth_ * screenHeight_ * 4));
+    //memset(buffer, 200, (screenWidth_ * screenHeight_ * 3));
+
+    auto end = now();
+
+
+    printt(s, end);
+    cv::imshow("test", crop);
+    char c = cv::waitKey(1);
+    if (c == 'a')
+        n--;
+    else if (c == 'd')
+        n++;
+   // pCtx->Unmap(croppedTextureOut, 0);
+  //  pCtx->Unmap(croppedTexture, 0);
+
+    pCtx->Unmap(undistortedShaderTex, 0);
+
     return hr;
+    
+
+
 }
 
 /// Release all resources

@@ -33,6 +33,10 @@
 using namespace std;
 #include <dxgi1_2.h>
 #include <d3d11_2.h>
+#include "chrono"
+
+std::chrono::system_clock::time_point now();
+void printt(std::chrono::system_clock::time_point& start, std::chrono::system_clock::time_point& end);
 
 class DDAImpl
 {
@@ -61,6 +65,19 @@ private:
     LARGE_INTEGER lastPTS = { 0 };
     /// Clock frequency from QueryPerformaceFrequency()
     LARGE_INTEGER qpcFreq = { 0 };
+
+    int n = 0;
+    int screenWidth_ = 3840;
+    int screenHeight_ = 2160;
+    int startX = 1920, endX = 3800, startY = 400, endY = 1480;
+
+    int croppedWidth = endX - startX;
+    int croppedHeight = endY - startY;
+
+    D3D11_BOX sourceRegion; 
+    ID3D11Texture2D* undistortedShaderTex;
+    ID3D11Texture2D* croppedTexture, * croppedTextureOut;
+
     /// Default constructor
     DDAImpl() {}
     

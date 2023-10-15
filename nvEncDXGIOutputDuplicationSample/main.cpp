@@ -30,6 +30,7 @@
 #include "DDAImpl.h"
 #include "Preproc.h"
 #include "NvEncoder/NvEncoderD3D11.h"
+#include "chrono"
 
 class DemoApplication
 {
@@ -231,6 +232,7 @@ public:
         {
             failCount++;
         }
+
         return hr;
     }
 
@@ -366,6 +368,7 @@ int Grab60FPS(int nFrames)
         QueryPerformanceCounter(&start);
         /// Get a frame from DDA
         hr = Demo.Capture(wait);
+
         if (hr == DXGI_ERROR_WAIT_TIMEOUT) 
         {
             /// retry if there was no new update to the screen during our specific timeout interval
@@ -394,18 +397,18 @@ int Grab60FPS(int nFrames)
             }
             RESET_WAIT_TIME(start, end, interval, freq);
             /// Preprocess for encoding
-            hr = Demo.Preproc(); 
-            if (FAILED(hr))
-            {
-                printf("Preproc failed with error 0x%08x\n", hr);
-                return -1;
-            }
-            hr = Demo.Encode();
-            if (FAILED(hr))
-            {
-                printf("Encode failed with error 0x%08x\n", hr);
-                return -1;
-            }
+            //hr = Demo.Preproc(); 
+            //if (FAILED(hr))
+            //{
+            //    printf("Preproc failed with error 0x%08x\n", hr);
+            //    return -1;
+            //}
+            //hr = Demo.Encode();
+            //if (FAILED(hr))
+            //{
+            //    printf("Encode failed with error 0x%08x\n", hr);
+            //    return -1;
+            //}
             capturedFrames++;
         }
     } while (capturedFrames <= nFrames);
@@ -424,14 +427,129 @@ void printHelp()
     printf(" DXGIOUTPUTDuplication_NVENC_Demo: '-frames <n>': n = No. of frames to capture");
 }
 
+#include <opencv2/opencv.hpp>
 int main(int argc, char** argv)
 {
     /// The app will try to capture 60 times, by default
-    int nFrames = 60;
+    int nFrames = 6000;
     int ret = 0;
     bool useNvenc = true;
 
-    /// Parse arguments
+    //ID3D11DeviceContext* pContext;
+
+    //IDXGIOutputDuplication* deskDupl = nullptr;
+    //ID3D11Device* d3dDevice = nullptr;
+
+    //// Initialize DXGI and get the desktop duplication interface
+    //DXGI_OUTDUPL_DESC deskDuplDesc;
+    //DXGI_OUTPUT_DESC outputDesc;
+    //// Create DXGI Factory
+    //D3D_FEATURE_LEVEL featureLevel;
+
+    //HRESULT hr = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &pContext);
+
+    //IDXGIFactory* dxgiFactory = nullptr;
+    //CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&dxgiFactory);
+
+    //// Get DXGI device from Direct3D device
+    //IDXGIDevice* dxgiDevice = nullptr;
+    //d3dDevice->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgiDevice);
+
+    //// Get DXGI adapter
+    ////dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgiAdapter);
+
+    //// Get primary desktop output
+    ////IDXGIOutput* primaryOutput0 = nullptr;
+
+    ////IDXGIFactory1* dxgiFactory = nullptr;
+    // CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
+
+    //IDXGIAdapter* dxgiAdapter = nullptr;
+    //dxgiFactory->EnumAdapters(0, &dxgiAdapter);
+    //dxgiFactory->Release();
+
+    //D3D11CreateDevice(dxgiAdapter,
+    //    D3D_DRIVER_TYPE_UNKNOWN,
+    //    NULL,
+    //    NULL,
+    //    NULL,
+    //    NULL,
+    //    D3D11_SDK_VERSION,
+    //    &d3dDevice,
+    //    NULL,
+    //    &pContext);
+
+    //IDXGIOutput* dxgiOutput = nullptr;
+    //dxgiAdapter->EnumOutputs(0, &dxgiOutput);
+    //dxgiAdapter->Release();
+
+    //IDXGIOutput1* dxgiOutput1 = nullptr;
+    //dxgiOutput->QueryInterface(__uuidof(dxgiOutput1), reinterpret_cast<void**>(&dxgiOutput1));
+    //dxgiOutput->Release();
+
+    //d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+
+    //dxgiOutput1->DuplicateOutput(dxgiDevice, &deskDupl);
+    //dxgiOutput1->Release();
+    //dxgiDevice->Release();
+
+    //// Main capture loop
+    //while (true) {
+    //    // Acquire next frame
+    //    IDXGIResource* desktopResource = nullptr;
+    //    DXGI_OUTDUPL_FRAME_INFO frameInfo;
+    //    deskDupl->AcquireNextFrame(500, &frameInfo, &desktopResource);
+
+    //    // Copy the frame data to system memory
+    //    ID3D11Texture2D* desktopTexture = nullptr;
+    //    d3dDevice->OpenSharedResource(desktopResource, __uuidof(ID3D11Texture2D), (void**)&desktopTexture);
+
+    //    // Process captured frame (for example, save it to a file or display it)
+    //    // ... (Your processing code here)
+
+    //    // Release resources
+    //    desktopTexture->Release();
+    //    desktopResource->Release();
+    //    deskDupl->ReleaseFrame();
+    //}
+
+    //// Clean up
+    ////primaryOutput->Release();
+    //dxgiAdapter->Release();
+    //dxgiDevice->Release();
+    //d3dDevice->Release();
+    //dxgiFactory->Release();
+    //deskDupl->Release();
+
+    //cv::Mat screenshot(cv::Size(1920, 1080), CV_8UC4, resource.pData, resource.RowPitch);
+    //cv::imshow("daw", screenshot);
+    //cv::waitKey(1000);
+    //pContext->Unmap(pSurface, 0);
+
+    // Now, the 'screenshot' variable contains the screen capture as a cv::Mat object
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*/// Parse arguments
     try
     {
         if (argc > 1)
@@ -473,7 +591,7 @@ int main(int argc, char** argv)
         printf(" DXGIOUTPUTDuplication_NVENC_Demo: Invalid arguments passed.\n\
                                                    Continuing to grab 60 frames.\n");
         printHelp();
-    }
+    }*/
     printf(" DXGIOUTPUTDuplication_NVENC_Demo: Frames to Capture: %d.\n", nFrames);
 
     /// Kick off the demo
