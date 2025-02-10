@@ -67,12 +67,12 @@ private:
     LARGE_INTEGER qpcFreq = { 0 };
 
     int n = 0;
-    int screenWidth_ = 3840;
-    int screenHeight_ = 2160;
-    int startX = 1920, endX = 3800, startY = 400, endY = 1480;
+    //int screenWidth_ = 3840;
+    //int screenHeight_ = 2160;
+    int startX, endX, startY, endY;
 
-    int croppedWidth = endX - startX;
-    int croppedHeight = endY - startY;
+    int croppedWidth ;
+    int croppedHeight ;
 
     D3D11_BOX sourceRegion; 
     ID3D11Texture2D* undistortedShaderTex;

@@ -95,7 +95,10 @@ HRESULT DDAImpl::Init()
     height = outDesc.ModeDesc.Height;
     width = outDesc.ModeDesc.Width;
 
+    startX = 100, endX = 1800, startY = 100, endY = 900;
 
+    croppedWidth = endX - startX;
+    croppedHeight = endY - startY;
 
 
     ////n = 12;
@@ -148,8 +151,8 @@ HRESULT DDAImpl::Init()
 
 
 
-    texDesc.Width = 3840;
-    texDesc.Height = 2160;
+    texDesc.Width = width;
+    texDesc.Height = height;
     texDesc.MipLevels = 1;
     texDesc.ArraySize = 1;
     texDesc.SampleDesc.Count = 1;
@@ -212,6 +215,7 @@ HRESULT DDAImpl::GetCapturedFrame(ID3D11Texture2D **ppTex2D, int wait)
             printf(__FUNCTION__": %d : Access lost, frame needs to be released?\n", frameno);
         }
         RETURN_ERR(hr);
+
     }
     if (frameInfo.AccumulatedFrames == 0 || frameInfo.LastPresentTime.QuadPart == 0)
     {
@@ -271,7 +275,7 @@ HRESULT DDAImpl::GetCapturedFrame(ID3D11Texture2D **ppTex2D, int wait)
         if (FAILED(pCtx->Map(undistortedShaderTex, 0, D3D11_MAP_READ, 0, &mappedResource)))
             std::cout << "Error: [CAM 2] could not Map Rendered Camera ShaderResource for Undistortion" << std::endl;
         mat  = cv::Mat(height, width, CV_8UC4, mappedResource.pData);
-        cv::Rect myROI(1900, 1000, 1920, 1000);
+        cv::Rect myROI(100, 100, 1720, 800);
 
         crop = mat(myROI);
     }
